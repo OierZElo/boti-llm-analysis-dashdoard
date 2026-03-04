@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+
+# Virtual env
+.venv/
+venv/
+
+# Docker
+*.log
+*:Zone.Identifier
