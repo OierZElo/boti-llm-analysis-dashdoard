@@ -28,32 +28,39 @@ tasks:
         fi
 
   backend:venv:
-    desc: Crea el venv del backend si no existe
+    desc: Crea el venv del backend si no existe (usa python3 o python)
     cmds:
       - |
         if [ ! -d "{{.VENV_DIR}}" ]; then
-          python -m venv "{{.VENV_DIR}}"
+          PYTHON_BIN="$(command -v python3 || true)"
+          if [ -z "$PYTHON_BIN" ]; then
+            PYTHON_BIN="$(command -v python || true)"
+          fi
+          if [ -z "$PYTHON_BIN" ]; then
+            echo "❌ No se encontró python3 ni python en PATH."
+            exit 1
+          fi
+
+          "$PYTHON_BIN" -m venv "{{.VENV_DIR}}"
           echo "✅ Venv creado en {{.VENV_DIR}}"
         else
           echo "ℹ️ Venv ya existe en {{.VENV_DIR}}"
         fi
 
   backend:install:
-    desc: Instala dependencias del backend (pip)
+    desc: Instala dependencias del backend (pip del venv)
     deps: [backend:venv]
     cmds:
       - |
-        . "{{.VENV_DIR}}/bin/activate" && \
-        pip install -r "{{.BACKEND_DIR}}/requirements.txt"
+        "{{.VENV_DIR}}/bin/python" -m pip install --upgrade pip
+        "{{.VENV_DIR}}/bin/python" -m pip install -r "{{.BACKEND_DIR}}/requirements.txt"
 
   backend:dev:
-    desc: Arranca FastAPI (uvicorn --reload) en :8000
+    desc: Arranca FastAPI (uvicorn --reload) en :8000 (desde backendDashboard/)
     deps: [backend:env, backend:install]
     dir: "{{.BACKEND_DIR}}"
     cmds:
-      - |
-        . ".venv/bin/activate" && \
-        uvicorn backendDashboard:app --reload --host 0.0.0.0 --port {{.BACKEND_PORT}}
+      - .venv/bin/python -m uvicorn backendDashboard:app --reload --host 0.0.0.0 --port {{.BACKEND_PORT}}
 
   # -------------------------
   # Frontend
